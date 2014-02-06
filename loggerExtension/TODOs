@@ -1,0 +1,13 @@
+need to do:
+  ** html ui in a different tab
+      chrome-extension://dbepggeogbaibhgnhhndojpepiihcmeb/pages/options.html
+  ** content script
+
+emulate user activity in the chromium browser...
+register typying in textboxes and clicks on links
+  most stuff is this
+
+new idea - incongnito identification through typing patterns and search terms
+  can compromise anonimity?!; can you fingerprint a person based on this?
+  easy to alter - not a real problem if you are aware of it
+  prolly not a real issue
