@@ -5,22 +5,26 @@
   "description": "logs typing activity and computest stats",
   "version": "1.0",
 
+  "background": {
+    "scripts": ["libs/jquery-2.1.0.min.js", "libs/underscore-min.js", "blabber.js"]
+  },
 
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["libs/jquery-2.1.0.min.js", "logger.js"]
+      "js": ["libs/underscore-min.js", "libs/jquery-2.1.0.min.js", "searcher.js"]
     }
   ],
   "permissions": [
-    "https://secure.flickr.com/",
-    "http://www.google.com/",
-    "http://localhost/*",
-
+   "tabs",
+    "http://*/*",
     "storage"
   ],
   "browser_action": {
     "default_icon": "icon.png",
     "default_popup": "popup.html"
-  }
+  },
+
+  "manifest_version": 2,
+  "content_security_policy": "script-src 'self' https://ajax.googleapis.com; object-src 'self'"
 }

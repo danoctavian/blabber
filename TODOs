@@ -1,0 +1,18 @@
+implement random searches
+  use a google chrome extension
+    - really simple to install
+    - uses the browser itself - harder to detect
+    - makes more sense to the user
+
+
+steps:
+
+1.  generate queries and execute them
+  use a feed - 
+
+2.  let the key press emulation for later
+  see if google responds negatively
+    if so emulate key actions
+
+
+
