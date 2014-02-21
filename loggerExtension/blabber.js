@@ -9,7 +9,10 @@ chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 
 var searchEngines = (function() {
   var se = {}
-  se.google = {url: "http://www.google.com", browserId: -1}
+
+  // TODO: find better url. this sends you straight to the search menu which is good
+  //  but it's fixed
+  se.google = {url: "http://www.google.com/search?hl=en&q=|", browserId: -1}
   return se
 }())
 
@@ -46,8 +49,9 @@ var permaTabs = (function() {
   permaTabs.makeTab = function(config) {
     var deferredTab = $.Deferred()
     chrome.tabs.create(config,function(tab) {
-      tabWrappers.push({tab: tab, config: config})
-      deferredTab.resolve(tab)
+      var newTab = {tab: tab, config: config}
+      tabWrappers.push(newTab)
+      deferredTab.resolve(newTab)
     })
     return deferredTab.promise()
   }
@@ -55,8 +59,7 @@ var permaTabs = (function() {
   chrome.tabs.onRemoved.addListener(function(tabId) {
     console.log("removed tab " + tabId)
     var wtab = _.find(tabWrappers, function(x) {return x.tab.id === tabId})
-    if (wtab !== undefined) {
-      wtab.tab = null // it's not there for the moment
+    if (wtab !== undefined) { wtab.tab = null // it's not there for the moment
       permaTabs.makeTab(wtab.config).then(function(tab) {
         wtab.tab = tab
       })
@@ -98,25 +101,44 @@ var feed = (function() {
 var query = (function () {
   query = {}
 
+  // TODO: needs better implementation; more sensical searches
+
   query.randWordsSlice = function(sentence) {
     var words = sentence.split(/\s+/)
-    console.log(words)
-    return _.sample(words, _.sample(_.range(1, 2 + words.length / 2)))
+//    console.log(words)
+    return _.sample(words, _.sample(_.range(1, 2 + words.length / 2))).join(" ")
   }
   
   query.getQueryGen = function(feeds) {
-    var all = _.reduce(feeds, function (x, y) {return x.concat(y)}, [])
+    var all = _.reduce(_.pluck(feeds, 'entries'), function (x, y) {return x.concat(y)}, [])
     return function() {
-      return query.randWordsSlice(_.sample(all))
+      return query.randWordsSlice(_.sample(all).title)
     }
+  }
+
+  query.sendQueries = function(permaTab, getQuery) {
+
+    function getQueryTime() { // millis
+      // TODO; add randomness and per unit of time rate in options
+      return 5000 + (Math.random() - 0.5) * 2000
+    }
+
+    function sendQuery() {
+      if (permaTab.tab !== null) { // is currently available
+        var q = getQuery()
+        console.log("sending query: " + q + " to tab " + permaTab.tab.id)                 
+        
+        chrome.tabs.sendMessage(permaTab.tab.id, {query: q}, function(response) {
+          console.log("sent query and got " + response)
+          setTimeout(sendQuery, getQueryTime())
+        })
+      }
+    }
+    sendQuery()
   }
   
   return query
 }())
-
-console.log("running background script ")
-
-var se = searchEngines.google
 
 
 /* DEBUG functions */
@@ -138,36 +160,32 @@ var debug = (function() {
 
 function main() {
 
-  console.log(query.randWordsSlice("so fut pe matah"))
-  return
-/*
-  permaTabs.makeTab({url: se.url}).then(function() {
-    console.log("created tab")
-  })
-*/
+  console.log("running background script ")
 
+  var se = searchEngines.google
+
+  var getQuery 
+  var queryTab
   search.loadOptions()
   .then(function (options) {
     var urls = options.feeds
-    return $.when.apply($, _.map(urls, function (url) { return feed.getFeed(url, 2)}))
+    return $.when.apply($, _.map(urls, function (url) { return feed.getFeed(url, 100)}))
   })
   .then(function() {
     var feeds = Array.prototype.slice.call(arguments)
     for (i in feeds) {
       debug.printFeed(feeds[i])
     }
+    getQuery = query.getQueryGen(feeds)    
+    return permaTabs.makeTab({url: se.url})
+  })
+  .then(function(permaTab) {
+    queryTab = permaTab        
+    // schedule regular queries
+    query.sendQueries(permaTab, getQuery)        
   })
 }
 
 main()
-
-/* 
-
-  background tab activity
-    load options
-    load data seeds (rss feeds)
-    load search tab
-    send searches to do regularly (log them?)
-*/
 
 
