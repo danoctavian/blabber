@@ -23,15 +23,12 @@ var queryWriter = (function () {
 }())
 
 $( document ).ready(function () {
-
   chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
     console.log(request)
     queryWriter.writeQuery(request.query, "gbqfq")
     sendResponse("done")
   })
-
-
 })
 
 
